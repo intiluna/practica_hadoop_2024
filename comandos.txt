@@ -1,0 +1,123 @@
+
+# Terminal-----------
+cd dh-course/
+ls
+
+# revisar ficheros en hdfs
+hadoop fs -ls
+hadoop fs -ls /user/cloudera/
+
+
+# revisar ficheros en hive
+hadoop fs -ls /user/hive/warehouse/
+
+# pasar ficheros de local a hdfs
+
+# Creamos directorio para proyecto
+hadoop fs -mkdir /user/cloudera/proyecto
+
+# Eliminar directorio
+hadoop fs -rm -r /user/cloudera/proyecto
+
+# Se pasa carpeta “sample_dataset_hadoop”a hdfs/proyecto con:
+hadoop fs -put sample_dataset_hadoop /user/cloudera/proyecto/
+
+# revisar ficheros en proyecto/sample_dataset_hadoop
+hadoop fs -ls /user/cloudera/proyecto/sample_dataset_hadoop/
+
+# pasar ficheros .dat de hdfs a folder warehouse de hive
+hadoop fs -mv /user/cloudera/proyecto/sample_dataset_hadoop/ratings.dat /user/hive/warehouse/ratings;
+hadoop fs -mv /user/cloudera/proyecto/sample_dataset_hadoop/movies.dat /user/hive/warehouse/movies;
+hadoop fs -mv /user/cloudera/proyecto/sample_dataset_hadoop/users.dat /user/hive/warehouse/users;
+----------------------------------------------
+-------HIVE-----------------------------------
+----------------------------------------------
+# entrar a hive
+hive
+
+# salir de hive
+exit;
+
+# ver tablas
+show tables;
+
+# detalle de tabla
+describe ratings;
+
+# verificar datos
+SELECT * FROM ratings LIMIT 5;
+
+# eliminar tabla
+drop table ratings;
+
+# ver detalle de creacion de tabla
+show create table tabla-name;
+
+describe formatted tabla-name;
+
+describe extended tabla-name;
+
+# modificar la tabla (y el delimitador)
+ALTER TABLE ratings SET SERDEPROPERTIES ('field.delim'='::');
+
+---------------------------------------------------------------------
+# Modificar ficheros para reemplazar "::" por ","
+sed -i 's/::/,/g' ratings.dat
+sed -i 's/::/,/g' movies.dat
+sed -i 's/::/,/g' users.dat
+
+
+----------------------------------------------
+-------HIVE-CSV-SERDE-------------------------
+----------------------------------------------
+https://github.com/ogrodnek/csv-serde
+
+
+
+# tablas
+
+# Tabla para ratings:
+CREATE TABLE ratings (
+    user_id INT,
+    movie_id INT,
+    rating INT,
+    timestamp INT
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ',';
+
+# Tabla para users.dat:
+CREATE TABLE users (
+    user_id INT,
+    gender STRING,
+    age_group STRING,
+    occupation STRING,
+    zip_code STRING
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ',';
+
+# Tabla para movies.dat:
+CREATE TABLE movies (
+    movie_id INT,
+    title STRING,
+    genres ARRAY<STRING>
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ',';
+
+
+# SQOOP --------------------
+
+#probamos pasar de mySQL a HDFS
+sqoop import --connect jdbc:mysql://localhost/retail_db \
+ --username retail_dba --password cloudera \
+ --table customers
+
+#probamos pasar de HDFS a MYSQL
+sqoop export --connect jdbc:mysql://localhost/retail_db \
+  --username retail_dba --password cloudera \
+  --table resultado \
+  --export-dir /user/cloudera/proyecto/resultado \
+  --input-fields-terminated-by ','
+
