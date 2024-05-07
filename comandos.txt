@@ -29,6 +29,11 @@ hadoop fs -ls /user/cloudera/proyecto/sample_dataset_hadoop/
 hadoop fs -mv /user/cloudera/proyecto/sample_dataset_hadoop/ratings.dat /user/hive/warehouse/ratings;
 hadoop fs -mv /user/cloudera/proyecto/sample_dataset_hadoop/movies.dat /user/hive/warehouse/movies;
 hadoop fs -mv /user/cloudera/proyecto/sample_dataset_hadoop/users.dat /user/hive/warehouse/users;
+
+# copiar y reemplzar si ya existe fichero en destino
+hadoop fs -cp -f /user/cloudera/proyecto/sample_dataset_hadoop/ratings.dat /user/hive/warehouse/ratings;
+
+
 ----------------------------------------------
 -------HIVE-----------------------------------
 ----------------------------------------------
@@ -74,7 +79,7 @@ https://github.com/ogrodnek/csv-serde
 
 
 
-# tablas
+# tablas si fueran separadas por coma -------------
 
 # Tabla para ratings:
 CREATE TABLE ratings (
@@ -107,6 +112,53 @@ ROW FORMAT DELIMITED
 FIELDS TERMINATED BY ',';
 
 
+# tablas separadas por "::" -----------------------------
+
+CREATE EXTERNAL TABLE ratings(
+  user_id STRING, 
+  movie_id STRING, 
+  rating STRING, 
+  timestamp STRING
+)
+ROW FORMAT SERDE 
+  'org.apache.hadoop.hive.contrib.serde2.RegexSerDe' 
+WITH SERDEPROPERTIES ( 
+  "input.regex" = "^(\\d+)::(\\d+)::(\\d+)::(\\d+)$"
+)
+STORED AS TEXTFILE 
+LOCATION 'hdfs://quickstart.cloudera:8020/user/hive/warehouse/ratings';
+
+
+CREATE EXTERNAL TABLE users(
+    user_id STRING,
+    gender STRING,
+    age_group STRING,
+    occupation STRING,
+    zip_code STRING
+)
+ROW FORMAT SERDE 
+  'org.apache.hadoop.hive.contrib.serde2.RegexSerDe' 
+WITH SERDEPROPERTIES ( 
+  "input.regex" = "^(\\d+)::(\\d+)::(\\d+)::(\\d+)::(\\d+)$"
+)
+STORED AS TEXTFILE 
+LOCATION 'hdfs://quickstart.cloudera:8020/user/hive/warehouse/users';
+
+CREATE EXTERNAL TABLE movies(
+    movie_id STRING,
+    title STRING,
+    genres ARRAY<STRING>
+)
+ROW FORMAT SERDE 
+  'org.apache.hadoop.hive.contrib.serde2.RegexSerDe' 
+WITH SERDEPROPERTIES ( 
+  "input.regex" = "^(\\d+)::(\\d+)::(\\d+)$"
+)
+STORED AS TEXTFILE 
+LOCATION 'hdfs://quickstart.cloudera:8020/user/hive/warehouse/movies';
+
+
+
 # SQOOP --------------------
 
 #probamos pasar de mySQL a HDFS
@@ -120,4 +172,7 @@ sqoop export --connect jdbc:mysql://localhost/retail_db \
   --table resultado \
   --export-dir /user/cloudera/proyecto/resultado \
   --input-fields-terminated-by ','
+
+
+
 
